@@ -1,8 +1,352 @@
-<html>
-  <head>
-    <title> Wed </title>
-  </head>
-  <body>
-    <h1> Hello </h1>
-  </body>
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IoT Dashboard</title>
+  
+  <!-- CSS Files -->
+  <link rel="stylesheet" href="css/global.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/pages.css">
+  
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <!-- App Container -->
+  <div id="app">
+    <!-- Navigation Bar -->
+    <nav class="navbar" id="navbar">
+      <div class="nav-container">
+        <div class="nav-brand">
+          <i class="fas fa-cube"></i>
+          <span>IoT Dashboard</span>
+        </div>
+        
+        <div class="nav-menu">
+          <a href="#dashboard" class="nav-link active">
+            <i class="fas fa-tachometer-alt"></i>
+            <span>Dashboard</span>
+          </a>
+          <a href="#devices" class="nav-link">
+            <i class="fas fa-microchip"></i>
+            <span>Devices</span>
+          </a>
+          <a href="#analytics" class="nav-link">
+            <i class="fas fa-chart-line"></i>
+            <span>Analytics</span>
+          </a>
+          <a href="#alerts" class="nav-link">
+            <i class="fas fa-bell"></i>
+            <span>Alerts</span>
+          </a>
+          <a href="#settings" class="nav-link">
+            <i class="fas fa-cog"></i>
+            <span>Settings</span>
+          </a>
+        </div>
+        
+        <div class="nav-user">
+          <div class="user-menu">
+            <div class="user-avatar">
+              <img src="https://ui-avatars.com/api/?name=User&background=3498db&color=fff" alt="User" id="userAvatar">
+            </div>
+            <div class="user-info">
+              <span class="user-name" id="userName">User</span>
+              <span class="user-role" id="userRole">Admin</span>
+            </div>
+            <div class="user-dropdown">
+              <button class="btn btn-icon" id="userMenuBtn" aria-label="User menu">
+                <i class="fas fa-chevron-down"></i>
+              </button>
+              <div class="dropdown-menu" id="userDropdown">
+                <a href="#profile" class="dropdown-item">
+                  <i class="fas fa-user"></i>
+                  <span>Profile</span>
+                </a>
+                <a href="#settings" class="dropdown-item">
+                  <i class="fas fa-cog"></i>
+                  <span>Settings</span>
+                </a>
+                <div class="dropdown-divider"></div>
+                <a href="#" class="dropdown-item" id="logoutBtn">
+                  <i class="fas fa-sign-out-alt"></i>
+                  <span>Logout</span>
+                </a>
+              </div>
+            </div>
+          </div>
+          
+          <button class="btn btn-icon nav-toggle" id="navToggle" aria-label="Toggle navigation">
+            <i class="fas fa-bars"></i>
+          </button>
+        </div>
+      </div>
+    </nav>
+    
+    <!-- Page Container -->
+    <main id="pageContainer" class="page-container">
+      <!-- Pages sẽ được render động ở đây -->
+    </main>
+    
+    <!-- Modal Container -->
+    <div id="modalContainer"></div>
+  </div>
+  
+  <!-- JavaScript Files -->
+  <!-- Core -->
+  <script src="js/core/Router.js"></script>
+  <script src="js/core/BasePage.js"></script>
+  
+  <!-- Services -->
+  <script src="js/services/AuthService.js"></script>
+  
+  <!-- Utils -->
+  <script src="js/utils/ToastManager.js"></script>
+  
+  <!-- Pages -->
+  <script src="js/pages/LoginPage.js"></script>
+  <script src="js/pages/DashboardPage.js"></script>
+  <script src="js/pages/DevicesPage.js"></script>
+  
+  <script>
+    // App Initialization
+    class App {
+      constructor() {
+        this.router = null;
+        this.init();
+      }
+      
+      async init() {
+        // Khởi tạo router
+        this.router = new Router();
+        window.router = this.router;
+        
+        // Đăng ký routes TRƯỚC khi xử lý route đầu tiên
+        this.registerRoutes();
+        
+        // Bây giờ mới xử lý route đầu tiên
+        const initialRoute = window.location.hash || '#login';
+        this.router.handleRoute(initialRoute);
+        
+        // Setup navbar events
+        this.setupNavbar();
+        
+        // Setup auth listener
+        this.setupAuthListener();
+      }
+      
+      registerRoutes() {
+        // Login page
+        this.router.register('#login', {
+          component: LoginPage,
+          title: 'Login',
+          auth: false
+        });
+        
+        // Dashboard page
+        this.router.register('#dashboard', {
+          component: DashboardPage,
+          title: 'Dashboard',
+          auth: true
+        });
+        
+        // Devices page
+        this.router.register('#devices', {
+          component: DevicesPage,
+          title: 'Devices',
+          auth: true
+        });
+        
+        // Analytics page (placeholder)
+        this.router.register('#analytics', {
+          component: class extends BasePage {
+            async getContent() {
+              return `
+                <div class="analytics-page">
+                  <div class="page-header">
+                    <div>
+                      <h1 class="page-title">Analytics</h1>
+                      <p class="page-subtitle">Phân tích dữ liệu và báo cáo</p>
+                    </div>
+                  </div>
+                  <div style="text-align: center; padding: 50px;">
+                    <h2>Analytics Page</h2>
+                    <p>Analytics và reporting features sẽ được phát triển sớm.</p>
+                    <div style="margin-top: 20px;">
+                      <button class="btn btn-outline" onclick="window.router.navigate('#dashboard')">
+                        <i class="fas fa-arrow-left"></i> Back to Dashboard
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              `;
+            }
+          },
+          title: 'Analytics',
+          auth: true
+        });
+        
+        // Alerts page (placeholder)
+        this.router.register('#alerts', {
+          component: class extends BasePage {
+            async getContent() {
+              return `
+                <div class="alerts-page">
+                  <div class="page-header">
+                    <div>
+                      <h1 class="page-title">Alerts</h1>
+                      <p class="page-subtitle">Quản lý cảnh báo và thông báo</p>
+                    </div>
+                  </div>
+                  <div style="text-align: center; padding: 50px;">
+                    <h2>� Alerts Management</h2>
+                    <p>Alert management system sẽ được phát triển sớm.</p>
+                    <div style="margin-top: 20px;">
+                      <button class="btn btn-outline" onclick="window.router.navigate('#dashboard')">
+                        <i class="fas fa-arrow-left"></i> Back to Dashboard
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              `;
+            }
+          },
+          title: 'Alerts',
+          auth: true
+        });
+        
+        // Settings page (placeholder)
+        this.router.register('#settings', {
+          component: class extends BasePage {
+            async getContent() {
+              return `
+                <div class="settings-page">
+                  <div class="page-header">
+                    <div>
+                      <h1 class="page-title">Settings</h1>
+                      <p class="page-subtitle">Cấu hình hệ thống và tài khoản</p>
+                    </div>
+                  </div>
+                  <div style="text-align: center; padding: 50px;">
+                    <h2>System Settings</h2>
+                    <p>Settings và configuration panel sẽ được phát triển sớm.</p>
+                    <div style="margin-top: 20px;">
+                      <button class="btn btn-outline" onclick="window.router.navigate('#dashboard')">
+                        <i class="fas fa-arrow-left"></i> Back to Dashboard
+                      </button>
+                      <button class="btn btn-secondary" onclick="AuthService.logout()" style="margin-left: 10px;">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              `;
+            }
+          },
+          title: 'Settings',
+          auth: true
+        });
+        
+        // 404 page
+        this.router.register('#404', {
+          component: class extends BasePage {
+            async getContent() {
+              return `
+                <div style="text-align: center; padding: 100px 20px;">
+                  <h1 style="font-size: 4rem; color: #e74c3c;">404</h1>
+                  <h2>Trang không tìm thấy</h2>
+                  <p>Trang bạn đang tìm kiếm không tồn tại.</p>
+                  <button class="btn btn-primary" onclick="history.back()">Quay lại</button>
+                </div>
+              `;
+            }
+          },
+          title: '404 - Not Found',
+          auth: false
+        });
+      }
+      
+      setupNavbar() {
+        const navbar = document.getElementById('navbar');
+        const userMenuBtn = document.getElementById('userMenuBtn');
+        const userDropdown = document.getElementById('userDropdown');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const navToggle = document.getElementById('navToggle');
+        
+        // User menu toggle
+        if (userMenuBtn) {
+          userMenuBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            userDropdown.classList.toggle('show');
+          });
+        }
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', () => {
+          if (userDropdown) {
+            userDropdown.classList.remove('show');
+          }
+        });
+        
+        // Logout
+        if (logoutBtn) {
+          logoutBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            AuthService.logout();
+          });
+        }
+        
+        // Mobile nav toggle
+        if (navToggle) {
+          navToggle.addEventListener('click', () => {
+            navbar.classList.toggle('mobile-open');
+          });
+        }
+      }
+      
+      setupAuthListener() {
+        // Listen for auth changes
+        AuthService.addListener((event, data) => {
+          const navbar = document.getElementById('navbar');
+          
+          if (event === 'login' || event === 'sessionRestored') {
+            // Show navbar and update user info
+            navbar.classList.add('show');
+            this.updateUserInfo(data);
+          } else if (event === 'logout') {
+            // Hide navbar
+            navbar.classList.remove('show');
+          }
+        });
+        
+        // Initial check
+        if (AuthService.isAuthenticated()) {
+          const navbar = document.getElementById('navbar');
+          navbar.classList.add('show');
+          this.updateUserInfo(AuthService.getCurrentUser());
+        }
+      }
+      
+      updateUserInfo(user) {
+        const userName = document.getElementById('userName');
+        const userRole = document.getElementById('userRole');
+        const userAvatar = document.getElementById('userAvatar');
+        
+        if (userName) userName.textContent = user.name;
+        if (userRole) userRole.textContent = user.role;
+        if (userAvatar) userAvatar.src = user.avatar;
+      }
+    }
+    
+    // Initialize app when DOM is ready
+    document.addEventListener('DOMContentLoaded', () => {
+      window.app = new App();
+    });
+  </script>
+</body>
 </html>
