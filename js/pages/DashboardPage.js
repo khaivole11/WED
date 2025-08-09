@@ -1,6 +1,3 @@
-/**
- * Dashboard Page - Trang tổng quan hệ thống IoT
- */
 class DashboardPage extends BasePage {
   constructor() {
     super();
@@ -17,17 +14,13 @@ class DashboardPage extends BasePage {
         <!-- Page Header -->
         <div class="page-header">
           <div>
-            <h1 class="page-title">Dashboard</h1>
-            <p class="page-subtitle">Tổng quan hệ thống IoT của bạn</p>
+            <h1 class="page-title">Tổng quan</h1>
+            <p class="page-subtitle">Hệ thống điểm danh học sinh</p>
           </div>
           <div class="page-actions">
             <button class="btn btn-outline" onclick="this.refreshData()">
               <i class="fas fa-sync-alt"></i>
               Refresh
-            </button>
-            <button class="btn btn-primary" onclick="this.addDevice()">
-              <i class="fas fa-plus"></i>
-              Add Device
             </button>
           </div>
         </div>
@@ -36,53 +29,41 @@ class DashboardPage extends BasePage {
         <div class="metrics-grid">
           <div class="metric-card">
             <div class="metric-icon">
-              <i class="fas fa-microchip"></i>
+              <i class="fas fa-users"></i>
             </div>
             <div class="metric-content">
-              <h3 id="totalDevices">24</h3>
-              <p>Total Devices</p>
-              <div class="metric-trend up">
-                <i class="fas fa-arrow-up"></i> +2 this week
-              </div>
+              <h3 id="totalStudents">500</h3>
+              <p>Tổng số học sinh</p>
             </div>
           </div>
           
           <div class="metric-card">
             <div class="metric-icon">
-              <i class="fas fa-wifi"></i>
+              <i class="fas fa-check-circle"></i>
             </div>
             <div class="metric-content">
-              <h3 id="onlineDevices">18</h3>
-              <p>Online Devices</p>
-              <div class="metric-trend up">
-                <i class="fas fa-arrow-up"></i> 75% uptime
-              </div>
+              <h3 id="presentStudents">455</h3>
+              <p>Số học sinh có mặt</p>
             </div>
           </div>
           
           <div class="metric-card">
             <div class="metric-icon">
-              <i class="fas fa-exclamation-triangle"></i>
+              <i class="fas fa-clock"></i>
             </div>
             <div class="metric-content">
-              <h3 id="activeAlerts">3</h3>
-              <p>Active Alerts</p>
-              <div class="metric-trend down">
-                <i class="fas fa-arrow-down"></i> -2 from yesterday
-              </div>
+              <h3 id="lateStudents">35</h3>
+              <p>Số học sinh đi trễ</p>
             </div>
           </div>
           
           <div class="metric-card">
             <div class="metric-icon">
-              <i class="fas fa-bolt"></i>
+              <i class="fas fa-times-circle"></i>
             </div>
             <div class="metric-content">
-              <h3 id="powerConsumption">1.2kW</h3>
-              <p>Power Usage</p>
-              <div class="metric-trend up">
-                <i class="fas fa-arrow-up"></i> +5% today
-              </div>
+              <h3 id="absentStudents">10</h3>
+              <p>Số học sinh vắng mặt</p>
             </div>
           </div>
         </div>
@@ -91,46 +72,24 @@ class DashboardPage extends BasePage {
         <div class="charts-grid">
           <div class="chart-container">
             <div class="chart-header">
-              <h3 class="chart-title">Device Activity (24h)</h3>
-              <div class="chart-actions">
-                <select class="btn btn-sm" id="activityTimeRange">
-                  <option value="24h">Last 24 Hours</option>
-                  <option value="7d">Last 7 Days</option>
-                  <option value="30d">Last 30 Days</option>
-                </select>
-              </div>
+              <h3 class="chart-title">Tình trạng thiết bị điểm danh</h3>
             </div>
-            <div style="position: relative; height: 300px;">
-              <canvas id="activityChart"></canvas>
-            </div>
-          </div>
-          
-          <div class="chart-container">
-            <div class="chart-header">
-              <h3 class="chart-title">Recent Alerts</h3>
-              <div class="chart-actions">
-                <button class="btn btn-sm" onclick="this.viewAllAlerts()">
-                  View All
-                </button>
-              </div>
-            </div>
-            <div class="alerts-container" id="recentAlerts">
-              <!-- Alerts will be populated here -->
+            <div class="attendance-devices-table">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Tên thiết bị</th>
+                    <th>Lớp</th>
+                    <th>Trạng thái</th>
+                    <th>Ghi chú</th>
+                  </tr>
+                </thead>
+                <tbody id="devicesTable">
+                  <!-- Devices will be populated here -->
+                </tbody>
+              </table>
             </div>
           </div>
-        </div>
-        
-        <!-- Devices Grid -->
-        <div class="section-header">
-          <h2>Connected Devices</h2>
-          <button class="btn btn-outline" onclick="this.viewAllDevices()">
-            <i class="fas fa-list"></i>
-            View All
-          </button>
-        </div>
-        
-        <div class="devices-grid" id="devicesGrid">
-          <!-- Devices will be populated here -->
         </div>
       </div>
     `;
@@ -148,14 +107,6 @@ class DashboardPage extends BasePage {
     
     // Setup auto-refresh
     this.startAutoRefresh();
-    
-    // Setup event listeners
-    const timeRangeSelect = document.getElementById('activityTimeRange');
-    if (timeRangeSelect) {
-      this.addEventListenerTracked(timeRangeSelect, 'change', () => {
-        this.updateActivityChart();
-      });
-    }
   }
   
   /**
@@ -163,81 +114,29 @@ class DashboardPage extends BasePage {
    */
   loadDashboardData() {
     this.loadDevices();
-    this.loadAlerts();
     this.updateMetrics();
-  }
-  
-  /**
-   * Load devices data
-   */
-  loadDevices() {
-    const devices = this.getMockDevices();
-    const devicesGrid = document.getElementById('devicesGrid');
-    
-    if (!devicesGrid) return;
-    
-    devicesGrid.innerHTML = devices.slice(0, 6).map(device => `
-      <div class="device-card" data-device-id="${device.id}">
-        <div class="device-header">
-          <div class="device-info">
-            <h3>${device.name}</h3>
-            <p>${device.location}</p>
-          </div>
-          <div class="device-status-badge ${device.status}"></div>
-        </div>
-        <div class="device-body">
-          <p><strong>Type:</strong> ${device.type}</p>
-          <p><strong>Last Update:</strong> ${device.lastUpdate}</p>
-          
-          <div class="device-metrics">
-            ${device.metrics.map(metric => `
-              <div class="device-metric">
-                <div class="device-metric-value">${metric.value}</div>
-                <div class="device-metric-label">${metric.label}</div>
-              </div>
-            `).join('')}
-          </div>
-          
-          <div class="device-actions">
-            <button class="btn btn-sm btn-outline" onclick="this.viewDevice('${device.id}')">
-              <i class="fas fa-eye"></i> View
-            </button>
-            <button class="btn btn-sm btn-primary" onclick="this.configureDevice('${device.id}')">
-              <i class="fas fa-cog"></i> Configure
-            </button>
-          </div>
-        </div>
-      </div>
-    `).join('');
   }
   
   /**
    * Load alerts data
    */
-  loadAlerts() {
-    const alerts = this.getMockAlerts();
-    const alertsContainer = document.getElementById('recentAlerts');
+  loadDevices() {
+    const devices = this.getMockAttendanceDevices();
+    const devicesTable = document.getElementById('devicesTable');
     
-    if (!alertsContainer) return;
+    if (!devicesTable) return;
     
-    alertsContainer.innerHTML = alerts.slice(0, 5).map(alert => `
-      <div class="alert-item ${alert.severity}">
-        <div class="alert-icon">
-          <i class="fas ${this.getAlertIcon(alert.severity)}"></i>
-        </div>
-        <div class="alert-content">
-          <div class="alert-message">${alert.message}</div>
-          <div class="alert-time">${alert.time}</div>
-        </div>
-        <div class="alert-actions">
-          <button class="btn btn-xs btn-outline" onclick="this.acknowledgeAlert('${alert.id}')">
-            <i class="fas fa-check"></i>
-          </button>
-          <button class="btn btn-xs btn-outline" onclick="this.viewAlert('${alert.id}')">
-            <i class="fas fa-eye"></i>
-          </button>
-        </div>
-      </div>
+    devicesTable.innerHTML = devices.map(device => `
+      <tr>
+        <td>${device.name}</td>
+        <td>${device.class}</td>
+        <td>
+          <span class="status-badge ${device.status}">
+            ${this.getDeviceStatusText(device.status)}
+          </span>
+        </td>
+        <td>${device.note}</td>
+      </tr>
     `).join('');
   }
   
@@ -245,84 +144,27 @@ class DashboardPage extends BasePage {
    * Update metrics
    */
   updateMetrics() {
-    const devices = this.getMockDevices();
-    const alerts = this.getMockAlerts();
+    const students = this.getMockStudents();
     
-    const totalDevices = devices.length;
-    const onlineDevices = devices.filter(d => d.status === 'online').length;
-    const activeAlerts = alerts.filter(a => a.severity === 'critical' || a.severity === 'warning').length;
+    const totalStudents = 500;
+    const presentStudents = students.filter(s => s.status === 'present').length;
+    const lateStudents = students.filter(s => s.status === 'late').length;
+    const absentStudents = students.filter(s => s.status === 'absent').length;
     
-    document.getElementById('totalDevices').textContent = totalDevices;
-    document.getElementById('onlineDevices').textContent = onlineDevices;
-    document.getElementById('activeAlerts').textContent = activeAlerts;
-    document.getElementById('powerConsumption').textContent = '1.2kW';
+    // Scale up the numbers to match the total
+    const scaleFactor = totalStudents / students.length;
+    
+    document.getElementById('totalStudents').textContent = totalStudents;
+    document.getElementById('presentStudents').textContent = Math.round(presentStudents * scaleFactor);
+    document.getElementById('lateStudents').textContent = Math.round(lateStudents * scaleFactor);
+    document.getElementById('absentStudents').textContent = Math.round(absentStudents * scaleFactor);
   }
   
   /**
    * Setup charts
    */
   setupCharts() {
-    this.setupActivityChart();
-  }
-  
-  /**
-   * Setup activity chart
-   */
-  setupActivityChart() {
-    const ctx = document.getElementById('activityChart');
-    if (!ctx) return;
-    
-    const data = this.getActivityChartData();
-    
-    this.charts.activity = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: data.labels,
-        datasets: [{
-          label: 'Active Devices',
-          data: data.values,
-          borderColor: '#3498db',
-          backgroundColor: 'rgba(52, 152, 219, 0.1)',
-          borderWidth: 2,
-          fill: true,
-          tension: 0.4
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            display: false
-          }
-        },
-        scales: {
-          x: {
-            grid: {
-              display: false
-            }
-          },
-          y: {
-            beginAtZero: true,
-            grid: {
-              color: 'rgba(0, 0, 0, 0.1)'
-            }
-          }
-        }
-      }
-    });
-  }
-  
-  /**
-   * Update activity chart
-   */
-  updateActivityChart() {
-    if (!this.charts.activity) return;
-    
-    const data = this.getActivityChartData();
-    this.charts.activity.data.labels = data.labels;
-    this.charts.activity.data.datasets[0].data = data.values;
-    this.charts.activity.update();
+    // Không cần setup chart nữa vì đã chuyển sang trang khác
   }
   
   /**
@@ -331,7 +173,6 @@ class DashboardPage extends BasePage {
   startAutoRefresh() {
     this.updateInterval = setInterval(() => {
       this.updateMetrics();
-      this.updateActivityChart();
     }, 30000); // Update every 30 seconds
   }
   
@@ -359,198 +200,110 @@ class DashboardPage extends BasePage {
   // Mock data methods
   
   /**
-   * Get mock devices data
+   * Get mock students data
    */
-  getMockDevices() {
+  getMockStudents() {
     return [
       {
-        id: 'dev-001',
-        name: 'Smart Thermostat',
-        type: 'Temperature Sensor',
-        location: 'Living Room',
-        status: 'online',
-        lastUpdate: '2 minutes ago',
-        metrics: [
-          { label: 'Temp', value: '22°C' },
-          { label: 'Humidity', value: '45%' }
-        ]
+        id: 'hs-001',
+        name: 'Nguyễn Văn A',
+        studentId: 'HS101',
+        class: 'A01',
+        status: 'present',
+        attendanceDate: 'Apr 24, 2022',
+        arrivalTime: '06:55',
+        note: '--'
       },
       {
-        id: 'dev-002',
-        name: 'Security Camera',
-        type: 'Camera',
-        location: 'Front Door',
-        status: 'online',
-        lastUpdate: '1 minute ago',
-        metrics: [
-          { label: 'Status', value: 'Recording' },
-          { label: 'Quality', value: '1080p' }
-        ]
+        id: 'hs-002',
+        name: 'Lê Thị B',
+        studentId: 'HS102',
+        class: 'A02',
+        status: 'late',
+        attendanceDate: 'Apr 24, 2022',
+        arrivalTime: '07:21',
+        note: '--'
       },
       {
-        id: 'dev-003',
-        name: 'Smart Light',
-        type: 'Light Control',
-        location: 'Bedroom',
+        id: 'hs-003',
+        name: 'Trần Văn C',
+        studentId: 'HS103',
+        class: 'A03',
+        status: 'absent',
+        attendanceDate: 'Apr 24, 2022',
+        arrivalTime: '--',
+        note: 'Có phép'
+      },
+      {
+        id: 'hs-004',
+        name: 'Phạm Minh D',
+        studentId: 'HS104',
+        class: 'A04',
+        status: 'absent',
+        attendanceDate: 'Apr 24, 2022',
+        arrivalTime: '--',
+        note: 'Không phép'
+      },
+      {
+        id: 'hs-005',
+        name: 'Hồ Thị E',
+        studentId: 'HS105',
+        class: 'A05',
+        status: 'present',
+        attendanceDate: 'Apr 24, 2022',
+        arrivalTime: '06:58',
+        note: '--'
+      },
+      {
+        id: 'hs-006',
+        name: 'Đặng Văn F',
+        studentId: 'HS106',
+        class: 'A06',
+        status: 'present',
+        attendanceDate: 'Apr 24, 2022',
+        arrivalTime: '06:59',
+        note: '--'
+      }
+    ];
+  }
+  
+  /**
+   * Get mock attendance devices data
+   */
+  getMockAttendanceDevices() {
+    return [
+      {
+        name: 'Device 1',
+        class: '10A1',
+        status: 'online',
+        note: 'None'
+      },
+      {
+        name: 'Device 2',
+        class: '10A2',
         status: 'offline',
-        lastUpdate: '15 minutes ago',
-        metrics: [
-          { label: 'Brightness', value: '0%' },
-          { label: 'Color', value: 'Off' }
-        ]
-      },
-      {
-        id: 'dev-004',
-        name: 'Motion Detector',
-        type: 'Motion Sensor',
-        location: 'Hallway',
-        status: 'online',
-        lastUpdate: '30 seconds ago',
-        metrics: [
-          { label: 'Motion', value: 'None' },
-          { label: 'Battery', value: '85%' }
-        ]
-      },
-      {
-        id: 'dev-005',
-        name: 'Smart Lock',
-        type: 'Access Control',
-        location: 'Main Door',
-        status: 'online',
-        lastUpdate: '5 minutes ago',
-        metrics: [
-          { label: 'Status', value: 'Locked' },
-          { label: 'Battery', value: '92%' }
-        ]
-      },
-      {
-        id: 'dev-006',
-        name: 'Air Quality Monitor',
-        type: 'Environment Sensor',
-        location: 'Kitchen',
-        status: 'warning',
-        lastUpdate: '1 minute ago',
-        metrics: [
-          { label: 'AQI', value: '75' },
-          { label: 'CO2', value: '450ppm' }
-        ]
+        note: 'Lose connection'
       }
     ];
   }
   
   /**
-   * Get mock alerts data
+   * Get device status text
    */
-  getMockAlerts() {
-    return [
-      {
-        id: 'alert-001',
-        message: 'Smart Lock battery is running low',
-        severity: 'warning',
-        time: '5 minutes ago',
-        device: 'Smart Lock'
-      },
-      {
-        id: 'alert-002',
-        message: 'Bedroom Smart Light is offline',
-        severity: 'critical',
-        time: '15 minutes ago',
-        device: 'Smart Light'
-      },
-      {
-        id: 'alert-003',
-        message: 'Motion detected in hallway',
-        severity: 'info',
-        time: '30 minutes ago',
-        device: 'Motion Detector'
-      },
-      {
-        id: 'alert-004',
-        message: 'High CO2 levels detected in kitchen',
-        severity: 'warning',
-        time: '1 hour ago',
-        device: 'Air Quality Monitor'
-      },
-      {
-        id: 'alert-005',
-        message: 'Security camera recording quality degraded',
-        severity: 'info',
-        time: '2 hours ago',
-        device: 'Security Camera'
-      }
-    ];
-  }
-  
-  /**
-   * Get activity chart data
-   */
-  getActivityChartData() {
-    const timeRange = document.getElementById('activityTimeRange')?.value || '24h';
-    
-    if (timeRange === '24h') {
-      return {
-        labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '24:00'],
-        values: [15, 12, 18, 22, 20, 24, 18]
-      };
-    } else if (timeRange === '7d') {
-      return {
-        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-        values: [20, 22, 18, 24, 21, 19, 23]
-      };
-    } else {
-      return {
-        labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
-        values: [21, 23, 20, 24]
-      };
-    }
-  }
-  
-  /**
-   * Get alert icon
-   */
-  getAlertIcon(severity) {
-    const icons = {
-      critical: 'fa-exclamation-circle',
-      warning: 'fa-exclamation-triangle',
-      info: 'fa-info-circle'
+  getDeviceStatusText(status) {
+    const statusMap = {
+      online: 'Online',
+      offline: 'Offline',
+      warning: 'Warning'
     };
-    return icons[severity] || 'fa-info-circle';
+    return statusMap[status] || status;
   }
   
   // Action methods (placeholder implementations)
   
   refreshData() {
-    ToastManager.info('Refreshing dashboard data...');
+    ToastManager.info('Đang làm mới dữ liệu...');
     this.loadDashboardData();
-  }
-  
-  addDevice() {
-    ToastManager.info('Add device feature will be implemented soon');
-  }
-  
-  viewAllAlerts() {
-    window.router.navigate('#alerts');
-  }
-  
-  viewAllDevices() {
-    window.router.navigate('#devices');
-  }
-  
-  viewDevice(deviceId) {
-    ToastManager.info(`Viewing device ${deviceId}`);
-  }
-  
-  configureDevice(deviceId) {
-    ToastManager.info(`Configuring device ${deviceId}`);
-  }
-  
-  acknowledgeAlert(alertId) {
-    ToastManager.success('Alert acknowledged');
-    this.loadAlerts();
-  }
-  
-  viewAlert(alertId) {
-    ToastManager.info(`Viewing alert ${alertId}`);
   }
 }
 

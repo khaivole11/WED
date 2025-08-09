@@ -1,33 +1,42 @@
 /* Global CSS Variables and Base Styles */
 :root {
   /* Color Palette */
-  --primary-color: #2c3e50;
-  --secondary-color: #3498db;
+  --primary-color: #3498db;
+  --secondary-color: #2c3e50;
   --accent-color: #e74c3c;
   --success-color: #27ae60;
   --warning-color: #f39c12;
   --info-color: #17a2b8;
   --light-color: #f8f9fa;
-  --dark-color: #343a40;
+  --dark-color: #1a1a1a;
   
-  /* Background Colors */
-  --background-color: #f8f9fa;
-  --card-background: #ffffff;
-  --sidebar-background: #2c3e50;
-  --navbar-background: #ffffff;
+  /* Background Colors - Dark Theme */
+  --background-color: #0f1419;
+  --card-background: #1e2329;
+  --sidebar-background: #1e2329;
+  --navbar-background: #1e2329;
   
-  /* Text Colors */
-  --text-color: #2c3e50;
-  --text-muted: #6c757d;
+  /* Text Colors - Dark Theme */
+  --text-color: #ffffff;
+  --text-muted: #8c8c8c;
   --text-light: #ffffff;
   
   /* Border and Shadow */
-  --border-color: #dee2e6;
+  --border-color: #2d3748;
   --border-radius: 8px;
   --border-radius-lg: 12px;
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
-  --shadow: 0 2px 10px rgba(0,0,0,0.1);
-  --shadow-lg: 0 4px 20px rgba(0,0,0,0.15);
+  --border-radius-sm: 4px;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+  --shadow: 0 2px 10px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 15px rgba(0,0,0,0.2);
+  --shadow-lg: 0 4px 20px rgba(0,0,0,0.4);
+  
+  /* Additional colors for dark theme */
+  --hover-color: #2d3748;
+  --success-light: rgba(39, 174, 96, 0.1);
+  --warning-light: rgba(243, 156, 18, 0.1);
+  --danger-color: #e74c3c;
+  --danger-light: rgba(231, 76, 60, 0.1);
   
   /* Spacing */
   --spacing-xs: 0.25rem;
