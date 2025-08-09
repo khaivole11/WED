@@ -170,7 +170,7 @@ class AttendanceStatsPage extends BasePage {
    */
   async setupEvents() {
     // Populate initial data
-    this.loadStatsData();
+    await this.loadStatsData();
     
     // Setup charts
     this.setupCharts();
@@ -195,59 +195,144 @@ class AttendanceStatsPage extends BasePage {
   }
   
   /**
-   * Load stats data
+   * Load statistics data
    */
-  loadStatsData() {
-    this.loadClassStats();
-    this.updateOverviewStats();
+  async loadStatsData() {
+    try {
+      await this.loadClassStats();
+      await this.updateOverviewStats();
+    } catch (error) {
+      console.error('Error loading stats data:', error);
+      ToastManager.error('Lỗi khi tải dữ liệu thống kê');
+    }
   }
   
   /**
    * Load class statistics
    */
-  loadClassStats() {
-    const classStats = this.getMockClassStats();
-    const tableBody = document.getElementById('classStatsTable');
-    
-    if (!tableBody) return;
-    
-    tableBody.innerHTML = classStats.map(cls => `
-      <tr data-class="${cls.className}">
-        <td><strong>${cls.className}</strong></td>
-        <td>${cls.total}</td>
-        <td>
-          <span class="status-badge present">${cls.present}</span>
-        </td>
-        <td>
-          <span class="status-badge late">${cls.late}</span>
-        </td>
-        <td>
-          <span class="status-badge absent">${cls.absent}</span>
-        </td>
-        <td>
-          <div class="progress-bar">
-            <div class="progress-fill" style="width: ${cls.percentage}%"></div>
-            <span class="progress-text">${cls.percentage}%</span>
-          </div>
-        </td>
-        <td>
-          <button class="btn btn-xs btn-outline" onclick="this.viewClassDetail('${cls.className}')">
-            <i class="fas fa-eye"></i> Chi tiết
-          </button>
-        </td>
-      </tr>
-    `).join('');
+  async loadClassStats() {
+    try {
+      // Wait for Firebase to initialize
+      if (!window.firebaseService.isInitialized) {
+        await new Promise(resolve => {
+          const checkInit = () => {
+            if (window.firebaseService.isInitialized) {
+              resolve();
+            } else {
+              setTimeout(checkInit, 100);
+            }
+          };
+          checkInit();
+        });
+      }
+      
+      // Get today's attendance and all students
+      const todayAttendance = await window.firebaseService.getTodayAttendance();
+      const allStudents = await window.firebaseService.getStudents();
+      
+      // Group by class
+      const classSummary = {};
+      
+      // Initialize all classes from students
+      allStudents.forEach(student => {
+        if (!classSummary[student.class]) {
+          classSummary[student.class] = {
+            className: student.class,
+            total: 0,
+            present: 0,
+            late: 0,
+            absent: 0
+          };
+        }
+        classSummary[student.class].total++;
+      });
+      
+      // Count attendance by class
+      todayAttendance.forEach(record => {
+        if (classSummary[record.class]) {
+          classSummary[record.class][record.status]++;
+        }
+      });
+      
+      // Calculate attendance rates and missing students
+      const classStats = Object.values(classSummary).map(cls => {
+        const attendedCount = cls.present + cls.late;
+        cls.absent = cls.total - attendedCount; // Students not marked present/late are absent
+        cls.percentage = cls.total > 0 ? Math.round((attendedCount / cls.total) * 100) : 0;
+        return cls;
+      });
+      
+      // Update table
+      const tableBody = document.getElementById('classStatsTable');
+      if (tableBody) {
+        tableBody.innerHTML = classStats.map(cls => `
+          <tr data-class="${cls.className}">
+            <td><strong>${cls.className}</strong></td>
+            <td>${cls.total}</td>
+            <td>
+              <span class="status-badge present">${cls.present}</span>
+            </td>
+            <td>
+              <span class="status-badge late">${cls.late}</span>
+            </td>
+            <td>
+              <span class="status-badge absent">${cls.absent}</span>
+            </td>
+            <td>
+              <div class="progress-bar">
+                <div class="progress-fill" style="width: ${cls.percentage}%"></div>
+                <span class="progress-text">${cls.percentage}%</span>
+              </div>
+            </td>
+            <td>
+              <button class="btn btn-xs btn-outline" onclick="this.viewClassDetail('${cls.className}')">
+                <i class="fas fa-eye"></i> Chi tiết
+              </button>
+            </td>
+          </tr>
+        `).join('');
+      }
+      
+    } catch (error) {
+      console.error('Error loading class stats:', error);
+      
+      const tableBody = document.getElementById('classStatsTable');
+      if (tableBody) {
+        tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center;">Không thể tải dữ liệu thống kê lớp</td></tr>';
+      }
+    }
   }
   
   /**
    * Update overview statistics
    */
-  updateOverviewStats() {
-    // Update overview numbers based on mock data
-    document.getElementById('avgAttendance').textContent = '91.2%';
-    document.getElementById('todayAttendance').textContent = '455/500';
-    document.getElementById('lateRate').textContent = '7%';
-    document.getElementById('absentRate').textContent = '2%';
+  async updateOverviewStats() {
+    try {
+      // Get today's stats
+      const stats = await window.firebaseService.getAttendanceStats();
+      const totalStudents = await window.firebaseService.getStudents();
+      
+      // Calculate rates
+      const total = totalStudents.length;
+      const attended = stats.present + stats.late;
+      const attendanceRate = total > 0 ? Math.round((attended / total) * 100) : 0;
+      const lateRate = total > 0 ? Math.round((stats.late / total) * 100) : 0;
+      const absentRate = total > 0 ? Math.round((stats.absent / total) * 100) : 0;
+      
+      // Update UI
+      document.getElementById('avgAttendance').textContent = `${attendanceRate}%`;
+      document.getElementById('todayAttendance').textContent = `${attended}/${total}`;
+      document.getElementById('lateRate').textContent = `${lateRate}%`;
+      document.getElementById('absentRate').textContent = `${absentRate}%`;
+      
+    } catch (error) {
+      console.error('Error updating overview stats:', error);
+      
+      document.getElementById('avgAttendance').textContent = '-';
+      document.getElementById('todayAttendance').textContent = '-';
+      document.getElementById('lateRate').textContent = '-';
+      document.getElementById('absentRate').textContent = '-';
+    }
   }
   
   /**
@@ -466,8 +551,8 @@ class AttendanceStatsPage extends BasePage {
    * Start auto refresh
    */
   startAutoRefresh() {
-    this.updateInterval = setInterval(() => {
-      this.updateOverviewStats();
+    this.updateInterval = setInterval(async () => {
+      await this.updateOverviewStats();
       this.updateAttendanceChart();
     }, 60000); // Update every 60 seconds
   }
@@ -493,66 +578,11 @@ class AttendanceStatsPage extends BasePage {
     this.charts = {};
   }
   
-  // Mock data methods
-  
-  /**
-   * Get attendance chart data
-   */
-  getAttendanceChartData() {
-    const timeRange = document.getElementById('attendanceTimeRange')?.value || '7d';
-    
-    if (timeRange === '7d') {
-      return {
-        labels: ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'],
-        present: [450, 455, 440, 465, 450, 420, 380],
-        late: [30, 25, 35, 20, 35, 40, 30],
-        absent: [20, 20, 25, 15, 15, 40, 90]
-      };
-    } else if (timeRange === '30d') {
-      return {
-        labels: ['Tuần 1', 'Tuần 2', 'Tuần 3', 'Tuần 4'],
-        present: [2200, 2250, 2180, 2300],
-        late: [150, 140, 170, 120],
-        absent: [150, 110, 150, 80]
-      };
-    } else if (timeRange === 'semester') {
-      return {
-        labels: ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4'],
-        present: [8800, 9000, 8700, 9200],
-        late: [600, 560, 680, 480],
-        absent: [600, 440, 620, 320]
-      };
-    } else {
-      return {
-        labels: ['HK1', 'HK2'],
-        present: [18000, 17500],
-        late: [1200, 1100],
-        absent: [800, 900]
-      };
-    }
-  }
-  
-  /**
-   * Get mock class statistics
-   */
-  getMockClassStats() {
-    return [
-      { className: 'A01', total: 45, present: 42, late: 2, absent: 1, percentage: 93 },
-      { className: 'A02', total: 44, present: 40, late: 3, absent: 1, percentage: 91 },
-      { className: 'A03', total: 46, present: 43, late: 2, absent: 1, percentage: 93 },
-      { className: 'A04', total: 43, present: 38, late: 3, absent: 2, percentage: 88 },
-      { className: 'A05', total: 45, present: 41, late: 3, absent: 1, percentage: 91 },
-      { className: 'A06', total: 44, present: 40, late: 2, absent: 2, percentage: 91 },
-      { className: 'B01', total: 42, present: 39, late: 2, absent: 1, percentage: 93 },
-      { className: 'B02', total: 43, present: 39, late: 3, absent: 1, percentage: 91 }
-    ];
-  }
-  
   // Action methods
   
-  refreshData() {
+  async refreshData() {
     ToastManager.info('Đang làm mới dữ liệu thống kê...');
-    this.loadStatsData();
+    await this.loadStatsData();
   }
   
   exportReport() {

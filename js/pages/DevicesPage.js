@@ -1,12 +1,13 @@
 /**
- * Devices Page - Trang quản lý thiết bị IoT
+ * Classes Page - Trang quản lý lớp học
  */
-class DevicesPage extends BasePage {
+class ClassesPage extends BasePage {
   constructor() {
     super();
     this.currentFilter = 'all';
     this.searchQuery = '';
-    this.devices = [];
+    this.classes = [];
+    this.students = [];
   }
   
   /**
@@ -14,614 +15,396 @@ class DevicesPage extends BasePage {
    */
   async getContent() {
     return `
-      <div class="devices-page">
+      <div class="classes-page">
         <!-- Page Header -->
         <div class="page-header">
           <div>
-            <h1 class="page-title">Devices</h1>
-            <p class="page-subtitle">Quản lý và giám sát các thiết bị IoT</p>
+            <h1 class="page-title">Quản lý lớp học</h1>
+            <p class="page-subtitle">Theo dõi và quản lý các lớp học và học sinh</p>
           </div>
           <div class="page-actions">
-            <button class="btn btn-outline" id="refreshBtn">
+            <button class="btn btn-outline" onclick="window.currentPage.refreshClasses()">
               <i class="fas fa-sync-alt"></i>
               Refresh
             </button>
-            <button class="btn btn-primary" id="addDeviceBtn">
-              <i class="fas fa-plus"></i>
-              Add Device
-            </button>
+          </div>
+        </div>
+        
+        <!-- Stats Overview -->
+        <div class="devices-stats">
+          <div class="stat-card">
+            <div class="stat-icon total">
+              <i class="fas fa-school"></i>
+            </div>
+            <div class="stat-content">
+              <h3 id="totalClasses">-</h3>
+              <p>Tổng số lớp</p>
+            </div>
+          </div>
+          
+          <div class="stat-card">
+            <div class="stat-icon online">
+              <i class="fas fa-users"></i>
+            </div>
+            <div class="stat-content">
+              <h3 id="totalStudents">-</h3>
+              <p>Tổng học sinh</p>
+            </div>
+          </div>
+          
+          <div class="stat-card">
+            <div class="stat-icon online">
+              <i class="fas fa-user-check"></i>
+            </div>
+            <div class="stat-content">
+              <h3 id="presentToday">-</h3>
+              <p>Có mặt hôm nay</p>
+            </div>
+          </div>
+          
+          <div class="stat-card">
+            <div class="stat-icon warning">
+              <i class="fas fa-user-times"></i>
+            </div>
+            <div class="stat-content">
+              <h3 id="absentToday">-</h3>
+              <p>Vắng mặt hôm nay</p>
+            </div>
           </div>
         </div>
         
         <!-- Filters and Search -->
         <div class="devices-filters">
           <div class="filter-group">
-            <label>Filter by Status:</label>
-            <div class="filter-buttons">
-              <button class="filter-btn active" data-filter="all">All</button>
-              <button class="filter-btn" data-filter="online">Online</button>
-              <button class="filter-btn" data-filter="offline">Offline</button>
-              <button class="filter-btn" data-filter="warning">Warning</button>
+            <label>Lọc theo lớp:</label>
+            <div class="filter-buttons" id="classFilterButtons">
+              <button class="filter-btn active" data-filter="all">Tất cả</button>
             </div>
           </div>
           
           <div class="search-group">
             <div class="input-group">
               <i class="fas fa-search"></i>
-              <input type="text" id="deviceSearch" placeholder="Search devices..." />
-            </div>
-          </div>
-          
-          <div class="view-toggle">
-            <button class="view-btn active" data-view="grid">
-              <i class="fas fa-th"></i>
-            </button>
-            <button class="view-btn" data-view="list">
-              <i class="fas fa-list"></i>
-            </button>
-          </div>
-        </div>
-        
-        <!-- Device Stats -->
-        <div class="device-stats">
-          <div class="stat-item">
-            <div class="stat-icon online">
-              <i class="fas fa-circle"></i>
-            </div>
-            <div class="stat-content">
-              <span class="stat-number" id="onlineCount">0</span>
-              <span class="stat-label">Online</span>
-            </div>
-          </div>
-          
-          <div class="stat-item">
-            <div class="stat-icon offline">
-              <i class="fas fa-circle"></i>
-            </div>
-            <div class="stat-content">
-              <span class="stat-number" id="offlineCount">0</span>
-              <span class="stat-label">Offline</span>
-            </div>
-          </div>
-          
-          <div class="stat-item">
-            <div class="stat-icon warning">
-              <i class="fas fa-exclamation-triangle"></i>
-            </div>
-            <div class="stat-content">
-              <span class="stat-number" id="warningCount">0</span>
-              <span class="stat-label">Warning</span>
-            </div>
-          </div>
-          
-          <div class="stat-item">
-            <div class="stat-icon">
-              <i class="fas fa-microchip"></i>
-            </div>
-            <div class="stat-content">
-              <span class="stat-number" id="totalCount">0</span>
-              <span class="stat-label">Total</span>
+              <input type="text" id="studentSearch" placeholder="Tìm kiếm học sinh..." />
             </div>
           </div>
         </div>
         
-        <!-- Devices Grid/List -->
-        <div class="devices-container">
-          <div class="devices-grid" id="devicesContainer">
-            <!-- Devices will be populated here -->
-          </div>
+        <!-- Classes Grid -->
+        <div class="classes-grid" id="classesGrid">
+          <!-- Classes will be populated here -->
         </div>
         
-        <!-- Device Details Modal -->
-        <div id="deviceModal" class="modal">
+        <!-- Student Detail Modal -->
+        <div id="studentModal" class="modal" style="display: none;">
           <div class="modal-content">
             <div class="modal-header">
-              <h3 id="modalDeviceName">Device Details</h3>
-              <button class="modal-close" id="modalCloseBtn">&times;</button>
+              <h3>Chi tiết học sinh</h3>
+              <span class="close" onclick="window.currentPage.closeModal()">&times;</span>
             </div>
-            <div class="modal-body" id="modalBody">
-              <!-- Device details will be populated here -->
-            </div>
-            <div class="modal-footer">
-              <button class="btn btn-secondary" id="modalCloseFooterBtn">Close</button>
-              <button class="btn btn-primary" id="modalEditBtn">Edit Device</button>
+            <div class="modal-body" id="studentModalBody">
+              <!-- Student details will be populated here -->
             </div>
           </div>
         </div>
       </div>
     `;
   }
-  
+
   /**
-   * Setup các sự kiện của trang
+   * Setup page events
    */
   async setupEvents() {
-    // Load devices data
-    this.loadDevices();
-    
-    // Setup refresh button
-    const refreshBtn = document.getElementById('refreshBtn');
-    this.addEventListenerTracked(refreshBtn, 'click', () => this.refreshDevices());
-    
-    // Setup add device button
-    const addDeviceBtn = document.getElementById('addDeviceBtn');
-    this.addEventListenerTracked(addDeviceBtn, 'click', () => this.addNewDevice());
-    
-    // Setup modal events
-    const modalCloseBtn = document.getElementById('modalCloseBtn');
-    const modalCloseFooterBtn = document.getElementById('modalCloseFooterBtn');
-    const modalEditBtn = document.getElementById('modalEditBtn');
-    
-    this.addEventListenerTracked(modalCloseBtn, 'click', () => this.closeModal());
-    this.addEventListenerTracked(modalCloseFooterBtn, 'click', () => this.closeModal());
-    this.addEventListenerTracked(modalEditBtn, 'click', () => this.editDevice());
-    
-    // Setup filter buttons
-    const filterButtons = document.querySelectorAll('.filter-btn');
-    filterButtons.forEach(btn => {
-      this.addEventListenerTracked(btn, 'click', (e) => {
-        filterButtons.forEach(b => b.classList.remove('active'));
-        e.target.classList.add('active');
-        this.currentFilter = e.target.dataset.filter;
-        this.filterDevices();
-      });
-    });
-    
-    // Setup search
-    const searchInput = document.getElementById('deviceSearch');
-    this.addEventListenerTracked(searchInput, 'input', (e) => {
-      this.searchQuery = e.target.value.toLowerCase();
-      this.filterDevices();
-    });
-    
-    // Setup view toggle
-    const viewButtons = document.querySelectorAll('.view-btn');
-    viewButtons.forEach(btn => {
-      this.addEventListenerTracked(btn, 'click', (e) => {
-        viewButtons.forEach(b => b.classList.remove('active'));
-        e.target.classList.add('active');
-        this.toggleView(e.target.dataset.view);
-      });
-    });
-    
-    // Setup device action event delegation
-    const devicesContainer = document.getElementById('devicesContainer');
-    this.addEventListenerTracked(devicesContainer, 'click', (e) => {
-      const deviceAction = e.target.closest('.device-action');
-      const menuAction = e.target.closest('.device-menu-action');
-      const menuToggle = e.target.closest('.device-menu-toggle');
+    await this.loadClassesData();
+    this.setupFilters();
+    this.setupSearch();
+  }
+
+  /**
+   * Load classes and students data
+   */
+  async loadClassesData() {
+    try {
+      if (!window.firebaseService.isInitialized) {
+        await new Promise(resolve => {
+          const checkInit = () => {
+            if (window.firebaseService.isInitialized) {
+              resolve();
+            } else {
+              setTimeout(checkInit, 100);
+            }
+          };
+          checkInit();
+        });
+      }
+
+      // Load students data
+      this.students = await window.firebaseService.getStudents();
       
-      if (deviceAction) {
-        e.preventDefault();
-        const action = deviceAction.dataset.action;
-        const deviceId = deviceAction.dataset.deviceId;
-        this.handleDeviceAction(action, deviceId);
-      } else if (menuAction) {
-        e.preventDefault();
-        const action = menuAction.dataset.action;
-        const deviceId = menuAction.dataset.deviceId;
-        this.handleDeviceAction(action, deviceId);
-      } else if (menuToggle) {
-        e.preventDefault();
-        const deviceId = menuToggle.dataset.deviceId;
-        this.toggleDeviceMenu(deviceId);
+      // Load attendance data for today
+      const today = new Date().toISOString().split('T')[0];
+      const attendanceData = await window.firebaseService.getAttendanceByDate(today);
+      
+      // Group students by class
+      this.groupStudentsByClass(attendanceData);
+      
+      this.updateStats();
+      this.renderClasses();
+      this.updateFilterButtons();
+      
+    } catch (error) {
+      console.error('Error loading classes data:', error);
+      this.students = [];
+      this.classes = [];
+      this.updateStats();
+      this.renderClasses();
+    }
+  }
+
+  /**
+   * Group students by class
+   */
+  groupStudentsByClass(attendanceData) {
+    const classMap = new Map();
+    
+    this.students.forEach(student => {
+      const className = student.class;
+      if (!classMap.has(className)) {
+        classMap.set(className, {
+          name: className,
+          students: [],
+          totalStudents: 0,
+          presentToday: 0,
+          absentToday: 0,
+          lateToday: 0
+        });
+      }
+      
+      const attendance = attendanceData.find(a => a.studentId === student.id);
+      const attendanceStatus = attendance ? attendance.status : 'absent';
+      
+      const studentWithAttendance = {
+        ...student,
+        attendanceStatus,
+        arrivalTime: attendance ? attendance.arrivalTime : null,
+        attendanceTimestamp: attendance ? attendance.timestamp : null
+      };
+      
+      const classData = classMap.get(className);
+      classData.students.push(studentWithAttendance);
+      classData.totalStudents++;
+      
+      if (attendanceStatus === 'present') {
+        classData.presentToday++;
+      } else if (attendanceStatus === 'late') {
+        classData.lateToday++;
+      } else {
+        classData.absentToday++;
       }
     });
+    
+    this.classes = Array.from(classMap.values());
   }
-  
-  /**
-   * Load devices data
-   */
-  loadDevices() {
-    this.devices = this.getMockDevices();
-    this.renderDevices();
-    this.updateStats();
-  }
-  
-  /**
-   * Render devices
-   */
-  renderDevices() {
-    const container = document.getElementById('devicesContainer');
-    if (!container) return;
-    
-    const filteredDevices = this.getFilteredDevices();
-    
-    if (filteredDevices.length === 0) {
-      container.innerHTML = `
-        <div class="empty-state">
-          <i class="fas fa-microchip"></i>
-          <h3>No devices found</h3>
-          <p>No devices match your current filter criteria.</p>
-        </div>
-      `;
-      return;
-    }
-    
-    container.innerHTML = filteredDevices.map(device => this.renderDeviceCard(device)).join('');
-  }
-  
-  /**
-   * Render device card
-   */
-  renderDeviceCard(device) {
-    const statusClass = device.status;
-    const statusIcon = this.getStatusIcon(device.status);
-    
-    return `
-      <div class="device-card ${statusClass}" data-device-id="${device.id}">
-        <div class="device-header">
-          <div class="device-info">
-            <h3>${device.name}</h3>
-            <p class="device-type">${device.type}</p>
-            <p class="device-location">
-              <i class="fas fa-map-marker-alt"></i>
-              ${device.location}
-            </p>
-          </div>
-          <div class="device-status">
-            <div class="status-indicator ${statusClass}">
-              <i class="fas ${statusIcon}"></i>
-              <span>${device.status.charAt(0).toUpperCase() + device.status.slice(1)}</span>
-            </div>
-          </div>
-        </div>
-        
-        <div class="device-body">
-          <div class="device-metrics">
-            ${device.metrics.map(metric => `
-              <div class="metric-item">
-                <span class="metric-label">${metric.label}:</span>
-                <span class="metric-value ${metric.status || ''}">${metric.value}</span>
-              </div>
-            `).join('')}
-          </div>
-          
-          <div class="device-info-grid">
-            <div class="info-item">
-              <label>Last Update:</label>
-              <span>${device.lastUpdate}</span>
-            </div>
-            <div class="info-item">
-              <label>Firmware:</label>
-              <span>${device.firmware}</span>
-            </div>
-            <div class="info-item">
-              <label>IP Address:</label>
-              <span>${device.ipAddress}</span>
-            </div>
-            <div class="info-item">
-              <label>Uptime:</label>
-              <span>${device.uptime}</span>
-            </div>
-          </div>
-        </div>
-        
-        <div class="device-actions">
-          <button class="btn btn-sm btn-outline device-action" data-action="view" data-device-id="${device.id}" title="View Details">
-            <i class="fas fa-eye"></i>
-          </button>
-          <button class="btn btn-sm btn-outline device-action" data-action="configure" data-device-id="${device.id}" title="Configure">
-            <i class="fas fa-cog"></i>
-          </button>
-          <button class="btn btn-sm btn-outline device-action" data-action="restart" data-device-id="${device.id}" title="Restart">
-            <i class="fas fa-redo"></i>
-          </button>
-          <div class="dropdown">
-            <button class="btn btn-sm btn-outline dropdown-toggle device-menu-toggle" data-device-id="${device.id}">
-              <i class="fas fa-ellipsis-v"></i>
-            </button>
-            <div class="dropdown-menu" id="menu-${device.id}">
-              <a href="#" class="device-menu-action" data-action="edit" data-device-id="${device.id}">
-                <i class="fas fa-edit"></i> Edit
-              </a>
-              <a href="#" class="device-menu-action" data-action="duplicate" data-device-id="${device.id}">
-                <i class="fas fa-copy"></i> Duplicate
-              </a>
-              <div class="dropdown-divider"></div>
-              <a href="#" class="device-menu-action text-danger" data-action="delete" data-device-id="${device.id}">
-                <i class="fas fa-trash"></i> Delete
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-  }
-  
-  /**
-   * Get filtered devices
-   */
-  getFilteredDevices() {
-    let filtered = this.devices;
-    
-    // Filter by status
-    if (this.currentFilter !== 'all') {
-      filtered = filtered.filter(device => device.status === this.currentFilter);
-    }
-    
-    // Filter by search query
-    if (this.searchQuery) {
-      filtered = filtered.filter(device => 
-        device.name.toLowerCase().includes(this.searchQuery) ||
-        device.type.toLowerCase().includes(this.searchQuery) ||
-        device.location.toLowerCase().includes(this.searchQuery)
-      );
-    }
-    
-    return filtered;
-  }
-  
+
   /**
    * Update statistics
    */
   updateStats() {
-    const stats = {
-      online: this.devices.filter(d => d.status === 'online').length,
-      offline: this.devices.filter(d => d.status === 'offline').length,
-      warning: this.devices.filter(d => d.status === 'warning').length,
-      total: this.devices.length
-    };
+    const totalClasses = this.classes.length;
+    const totalStudents = this.students.length;
+    const presentToday = this.classes.reduce((sum, cls) => sum + cls.presentToday + cls.lateToday, 0);
+    const absentToday = this.classes.reduce((sum, cls) => sum + cls.absentToday, 0);
+
+    document.getElementById('totalClasses').textContent = totalClasses;
+    document.getElementById('totalStudents').textContent = totalStudents;
+    document.getElementById('presentToday').textContent = presentToday;
+    document.getElementById('absentToday').textContent = absentToday;
+  }
+
+  /**
+   * Update filter buttons
+   */
+  updateFilterButtons() {
+    const container = document.getElementById('classFilterButtons');
+    const buttons = ['<button class="filter-btn active" data-filter="all">Tất cả</button>'];
     
-    document.getElementById('onlineCount').textContent = stats.online;
-    document.getElementById('offlineCount').textContent = stats.offline;
-    document.getElementById('warningCount').textContent = stats.warning;
-    document.getElementById('totalCount').textContent = stats.total;
+    this.classes.forEach(cls => {
+      buttons.push(`<button class="filter-btn" data-filter="${cls.name}">${cls.name}</button>`);
+    });
+    
+    container.innerHTML = buttons.join('');
+    this.setupFilters();
   }
-  
+
   /**
-   * Filter devices
+   * Render classes grid
    */
-  filterDevices() {
-    this.renderDevices();
-  }
-  
-  /**
-   * Toggle view (grid/list)
-   */
-  toggleView(view) {
-    const container = document.getElementById('devicesContainer');
-    if (view === 'list') {
-      container.classList.add('list-view');
-    } else {
-      container.classList.remove('list-view');
+  renderClasses() {
+    const container = document.getElementById('classesGrid');
+    if (!container) return;
+
+    const filteredClasses = this.getFilteredClasses();
+
+    if (filteredClasses.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <i class="fas fa-school"></i>
+          <h3>Không có lớp học nào</h3>
+          <p>Chưa có dữ liệu lớp học trong hệ thống</p>
+        </div>
+      `;
+      return;
     }
-  }
-  
-  /**
-   * Get status icon
-   */
-  getStatusIcon(status) {
-    const icons = {
-      online: 'fa-circle',
-      offline: 'fa-circle',
-      warning: 'fa-exclamation-triangle'
-    };
-    return icons[status] || 'fa-circle';
-  }
-  
-  /**
-   * Get mock devices data
-   */
-  getMockDevices() {
-    return [
-      {
-        id: 'dev-001',
-        name: 'Smart Thermostat Pro',
-        type: 'Temperature Controller',
-        location: 'Living Room',
-        status: 'online',
-        lastUpdate: '2 minutes ago',
-        firmware: 'v2.1.3',
-        ipAddress: '192.168.1.101',
-        uptime: '15 days',
-        metrics: [
-          { label: 'Temperature', value: '22.5°C', status: 'normal' },
-          { label: 'Humidity', value: '45%', status: 'normal' },
-          { label: 'Battery', value: '98%', status: 'good' }
-        ]
-      },
-      {
-        id: 'dev-002',
-        name: 'Security Camera HD',
-        type: 'Surveillance Camera',
-        location: 'Front Door',
-        status: 'online',
-        lastUpdate: '1 minute ago',
-        firmware: 'v1.8.2',
-        ipAddress: '192.168.1.102',
-        uptime: '7 days',
-        metrics: [
-          { label: 'Resolution', value: '1080p', status: 'normal' },
-          { label: 'FPS', value: '30', status: 'normal' },
-          { label: 'Storage', value: '85%', status: 'warning' }
-        ]
-      },
-      {
-        id: 'dev-003',
-        name: 'Smart Light Strip',
-        type: 'LED Controller',
-        location: 'Bedroom',
-        status: 'offline',
-        lastUpdate: '25 minutes ago',
-        firmware: 'v1.2.1',
-        ipAddress: '192.168.1.103',
-        uptime: '0 minutes',
-        metrics: [
-          { label: 'Brightness', value: '0%', status: 'offline' },
-          { label: 'Color', value: 'Off', status: 'offline' },
-          { label: 'Power', value: 'Off', status: 'offline' }
-        ]
-      },
-      {
-        id: 'dev-004',
-        name: 'Motion Sensor V2',
-        type: 'PIR Motion Detector',
-        location: 'Hallway',
-        status: 'online',
-        lastUpdate: '30 seconds ago',
-        firmware: 'v3.0.1',
-        ipAddress: '192.168.1.104',
-        uptime: '22 days',
-        metrics: [
-          { label: 'Motion', value: 'None', status: 'normal' },
-          { label: 'Sensitivity', value: 'High', status: 'normal' },
-          { label: 'Battery', value: '76%', status: 'normal' }
-        ]
-      },
-      {
-        id: 'dev-005',
-        name: 'Smart Door Lock',
-        type: 'Access Control',
-        location: 'Main Entrance',
-        status: 'warning',
-        lastUpdate: '5 minutes ago',
-        firmware: 'v2.3.0',
-        ipAddress: '192.168.1.105',
-        uptime: '45 days',
-        metrics: [
-          { label: 'Status', value: 'Locked', status: 'normal' },
-          { label: 'Battery', value: '15%', status: 'warning' },
-          { label: 'Signal', value: 'Weak', status: 'warning' }
-        ]
-      },
-      {
-        id: 'dev-006',
-        name: 'Air Quality Monitor',
-        type: 'Environmental Sensor',
-        location: 'Kitchen',
-        status: 'online',
-        lastUpdate: '1 minute ago',
-        firmware: 'v1.4.2',
-        ipAddress: '192.168.1.106',
-        uptime: '12 days',
-        metrics: [
-          { label: 'AQI', value: '75', status: 'warning' },
-          { label: 'CO2', value: '420ppm', status: 'normal' },
-          { label: 'Temp', value: '24.1°C', status: 'normal' }
-        ]
-      },
-      {
-        id: 'dev-007',
-        name: 'Smart Outlet',
-        type: 'Power Control',
-        location: 'Office',
-        status: 'online',
-        lastUpdate: '3 minutes ago',
-        firmware: 'v1.1.0',
-        ipAddress: '192.168.1.107',
-        uptime: '8 days',
-        metrics: [
-          { label: 'Power', value: '125W', status: 'normal' },
-          { label: 'Voltage', value: '220V', status: 'normal' },
-          { label: 'Status', value: 'On', status: 'normal' }
-        ]
-      },
-      {
-        id: 'dev-008',
-        name: 'Window Sensor',
-        type: 'Contact Sensor',
-        location: 'Living Room Window',
-        status: 'online',
-        lastUpdate: '10 minutes ago',
-        firmware: 'v2.0.3',
-        ipAddress: '192.168.1.108',
-        uptime: '18 days',
-        metrics: [
-          { label: 'Status', value: 'Closed', status: 'normal' },
-          { label: 'Battery', value: '89%', status: 'good' },
-          { label: 'Signal', value: 'Strong', status: 'good' }
-        ]
-      }
-    ];
-  }
-  
-  // Action methods
-  
-  handleDeviceAction(action, deviceId) {
-    switch (action) {
-      case 'view':
-        this.viewDevice(deviceId);
-        break;
-      case 'configure':
-        this.configureDevice(deviceId);
-        break;
-      case 'restart':
-        this.restartDevice(deviceId);
-        break;
-      case 'edit':
-        this.editDevice(deviceId);
-        break;
-      case 'duplicate':
-        this.duplicateDevice(deviceId);
-        break;
-      case 'delete':
-        this.deleteDevice(deviceId);
-        break;
-      default:
-        console.warn('Unknown action:', action);
-    }
-  }
-  
-  refreshDevices() {
-    ToastManager.info('Refreshing devices...');
-    this.loadDevices();
-  }
-  
-  addNewDevice() {
-    ToastManager.info('Add new device feature will be implemented soon');
-  }
-  
-  viewDevice(deviceId) {
-    const device = this.devices.find(d => d.id === deviceId);
-    if (!device) return;
-    
-    const modal = document.getElementById('deviceModal');
-    const modalName = document.getElementById('modalDeviceName');
-    const modalBody = document.getElementById('modalBody');
-    
-    modalName.textContent = device.name;
-    modalBody.innerHTML = `
-      <div class="device-details">
-        <div class="detail-section">
-          <h4>Device Information</h4>
-          <div class="detail-grid">
-            <div class="detail-item">
-              <label>Type:</label>
-              <span>${device.type}</span>
-            </div>
-            <div class="detail-item">
-              <label>Location:</label>
-              <span>${device.location}</span>
-            </div>
-            <div class="detail-item">
-              <label>Status:</label>
-              <span class="status-badge ${device.status}">${device.status}</span>
-            </div>
-            <div class="detail-item">
-              <label>Firmware:</label>
-              <span>${device.firmware}</span>
-            </div>
-            <div class="detail-item">
-              <label>IP Address:</label>
-              <span>${device.ipAddress}</span>
-            </div>
-            <div class="detail-item">
-              <label>Uptime:</label>
-              <span>${device.uptime}</span>
-            </div>
+
+    container.innerHTML = filteredClasses.map(classData => `
+      <div class="class-card">
+        <div class="class-header">
+          <h3>${classData.name}</h3>
+          <div class="class-stats">
+            <span class="stat-badge present">${classData.presentToday + classData.lateToday}/${classData.totalStudents}</span>
           </div>
         </div>
         
-        <div class="detail-section">
-          <h4>Current Metrics</h4>
-          <div class="metrics-list">
-            ${device.metrics.map(metric => `
-              <div class="metric-detail">
-                <span class="metric-name">${metric.label}</span>
-                <span class="metric-val ${metric.status}">${metric.value}</span>
+        <div class="class-summary">
+          <div class="summary-item">
+            <i class="fas fa-users"></i>
+            <span>Tổng: ${classData.totalStudents}</span>
+          </div>
+          <div class="summary-item present">
+            <i class="fas fa-user-check"></i>
+            <span>Có mặt: ${classData.presentToday}</span>
+          </div>
+          <div class="summary-item late">
+            <i class="fas fa-clock"></i>
+            <span>Trễ: ${classData.lateToday}</span>
+          </div>
+          <div class="summary-item absent">
+            <i class="fas fa-user-times"></i>
+            <span>Vắng: ${classData.absentToday}</span>
+          </div>
+        </div>
+        
+        <div class="students-list">
+          ${classData.students.slice(0, 5).map(student => `
+            <div class="student-item ${student.attendanceStatus}" onclick="window.currentPage.showStudentDetail('${student.id}')">
+              <div class="student-info">
+                <span class="student-name">${student.name}</span>
+                <span class="student-id">${student.id}</span>
               </div>
-            `).join('')}
+              <div class="attendance-status">
+                <i class="fas fa-circle"></i>
+                ${this.getStatusText(student.attendanceStatus)}
+              </div>
+            </div>
+          `).join('')}
+          ${classData.students.length > 5 ? `
+            <div class="more-students">
+              <span>+${classData.students.length - 5} học sinh khác</span>
+            </div>
+          ` : ''}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  /**
+   * Get filtered classes
+   */
+  getFilteredClasses() {
+    let filtered = this.classes;
+
+    if (this.currentFilter !== 'all') {
+      filtered = filtered.filter(cls => cls.name === this.currentFilter);
+    }
+
+    if (this.searchQuery) {
+      const query = this.searchQuery.toLowerCase();
+      filtered = filtered.map(cls => ({
+        ...cls,
+        students: cls.students.filter(student => 
+          student.name.toLowerCase().includes(query) ||
+          student.id.toLowerCase().includes(query)
+        )
+      })).filter(cls => cls.students.length > 0);
+    }
+
+    return filtered;
+  }
+
+  /**
+   * Setup filter buttons
+   */
+  setupFilters() {
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    filterButtons.forEach(btn => {
+      this.addEventListenerTracked(btn, 'click', () => {
+        filterButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        this.currentFilter = btn.dataset.filter;
+        this.renderClasses();
+      });
+    });
+  }
+
+  /**
+   * Setup search functionality
+   */
+  setupSearch() {
+    const searchInput = document.getElementById('studentSearch');
+    if (searchInput) {
+      this.addEventListenerTracked(searchInput, 'input', (e) => {
+        this.searchQuery = e.target.value;
+        this.renderClasses();
+      });
+    }
+  }
+
+  /**
+   * Show student detail modal
+   */
+  showStudentDetail(studentId) {
+    const student = this.students.find(s => s.id === studentId);
+    if (!student) return;
+
+    const modal = document.getElementById('studentModal');
+    const modalBody = document.getElementById('studentModalBody');
+    
+    modalBody.innerHTML = `
+      <div class="student-detail">
+        <div class="detail-header">
+          <div class="attendance-status ${student.attendanceStatus || 'absent'}">
+            <i class="fas fa-circle"></i>
+            ${this.getStatusText(student.attendanceStatus || 'absent')}
+          </div>
+          <h4>${student.name}</h4>
+        </div>
+        
+        <div class="detail-content">
+          <div class="detail-row">
+            <label>Mã học sinh:</label>
+            <span>${student.id}</span>
+          </div>
+          <div class="detail-row">
+            <label>Lớp:</label>
+            <span>${student.class}</span>
+          </div>
+          <div class="detail-row">
+            <label>Mã barcode:</label>
+            <span>${student.barcode}</span>
+          </div>
+          <div class="detail-row">
+            <label>Trạng thái hôm nay:</label>
+            <span class="${student.attendanceStatus || 'absent'}">${this.getStatusText(student.attendanceStatus || 'absent')}</span>
+          </div>
+          ${student.arrivalTime ? `
+            <div class="detail-row">
+              <label>Thời gian đến:</label>
+              <span>${student.arrivalTime}</span>
+            </div>
+          ` : ''}
+          <div class="detail-row">
+            <label>Ngày tạo:</label>
+            <span>${new Date(student.createdAt).toLocaleString('vi-VN')}</span>
           </div>
         </div>
       </div>
@@ -629,42 +412,47 @@ class DevicesPage extends BasePage {
     
     modal.style.display = 'block';
   }
-  
+
+  /**
+   * Close modal
+   */
   closeModal() {
-    const modal = document.getElementById('deviceModal');
+    const modal = document.getElementById('studentModal');
     modal.style.display = 'none';
   }
-  
-  configureDevice(deviceId) {
-    ToastManager.info(`Opening configuration for device ${deviceId}`);
+
+  /**
+   * Get status text
+   */
+  getStatusText(status) {
+    const statusMap = {
+      present: 'Có mặt',
+      late: 'Đi trễ',
+      absent: 'Vắng mặt'
+    };
+    return statusMap[status] || 'Chưa xác định';
   }
-  
-  editDevice(deviceId) {
-    ToastManager.info(`Editing device ${deviceId}`);
-  }
-  
-  restartDevice(deviceId) {
-    ToastManager.info(`Restarting device ${deviceId}...`);
-  }
-  
-  duplicateDevice(deviceId) {
-    ToastManager.info(`Duplicating device ${deviceId}`);
-  }
-  
-  deleteDevice(deviceId) {
-    if (confirm('Are you sure you want to delete this device?')) {
-      ToastManager.success('Device deleted successfully');
-      this.devices = this.devices.filter(d => d.id !== deviceId);
-      this.renderDevices();
-      this.updateStats();
+
+  /**
+   * Refresh classes data
+   */
+  async refreshClasses() {
+    if (window.ToastManager) {
+      window.ToastManager.info('🔄 Đang cập nhật dữ liệu lớp học...');
+    }
+    await this.loadClassesData();
+    if (window.ToastManager) {
+      window.ToastManager.success('✅ Đã cập nhật dữ liệu lớp học!');
     }
   }
-  
-  toggleDeviceMenu(deviceId) {
-    const menu = document.getElementById(`menu-${deviceId}`);
-    menu.classList.toggle('show');
+
+  /**
+   * Cleanup
+   */
+  cleanup() {
+    super.cleanup();
+    this.closeModal();
   }
 }
 
-// Export for use
-window.DevicesPage = DevicesPage;
+window.ClassesPage = ClassesPage;

@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="css/global.css">
   <link rel="stylesheet" href="css/components.css">
   <link rel="stylesheet" href="css/pages.css">
+  <link rel="stylesheet" href="css/toast.css">
   
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -40,6 +41,10 @@
             <i class="fas fa-users"></i>
             <span>Lớp học</span>
           </a>
+          <a href="#device-control" class="nav-link">
+            <i class="fas fa-cogs"></i>
+            <span>Điều khiển</span>
+          </a>
         </div>
         
         <div class="nav-user">
@@ -70,6 +75,11 @@
   </div>
   
   <!-- JavaScript Files -->
+  <!-- External Libraries (phải load trước) -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+  
   <!-- Core -->
   <script src="js/core/Router.js"></script>
   <script src="js/core/BasePage.js"></script>
@@ -77,126 +87,17 @@
   <!-- Utils -->
   <script src="js/utils/ToastManager.js"></script>
   
+  <!-- Services (sau khi external libs đã load) -->
+  <script src="js/services/FirebaseService.js"></script>
+  <script src="js/services/MqttService.js"></script>
+  
   <!-- Pages -->
   <script src="js/pages/DashboardPage.js"></script>
   <script src="js/pages/AttendanceStatsPage.js"></script>
   <script src="js/pages/DevicesPage.js"></script>
+  <script src="js/pages/DeviceControlPage.js"></script>
   
-  <script>
-    // App Initialization
-    class App {
-      constructor() {
-        this.router = null;
-        this.init();
-      }
-      
-      async init() {
-        // Khởi tạo router
-        this.router = new Router();
-        window.router = this.router;
-        
-        // Đăng ký routes TRƯỚC khi xử lý route đầu tiên
-        this.registerRoutes();
-        
-        // Bây giờ mới xử lý route đầu tiên
-        const initialRoute = window.location.hash || '#dashboard';
-        this.router.handleRoute(initialRoute);
-        
-        // Setup navbar events
-        this.setupNavbar();
-        
-        // Setup auth listener
-        this.setupAuthListener();
-        
-        // Force show navbar for debug
-        const navbar = document.getElementById('navbar');
-        navbar.classList.add('show');
-        this.updateUserInfo({
-          name: 'Debug User',
-          role: 'Admin',
-          avatar: 'https://ui-avatars.com/api/?name=Debug+User&background=007bff&color=fff'
-        });
-      }
-      
-      registerRoutes() {
-        // Dashboard page (default)
-        this.router.register('#dashboard', {
-          component: DashboardPage,
-          title: 'Tổng quan',
-          auth: false
-        });
-        
-        // Default route
-        this.router.register('', {
-          component: DashboardPage,
-          title: 'Tổng quan',
-          auth: false
-        });
-        
-        // Attendance Statistics page
-        this.router.register('#attendance-stats', {
-          component: AttendanceStatsPage,
-          title: 'Thống kê điểm danh',
-          auth: false
-        });
-        
-        // Devices page (renamed to Classes)
-        this.router.register('#devices', {
-          component: DevicesPage,
-          title: 'Lớp học',
-          auth: false  // Temporarily disable auth for debug
-        });
-        
-        // 404 page
-        this.router.register('#404', {
-          component: class extends BasePage {
-            async getContent() {
-              return `
-                <div style="text-align: center; padding: 100px 20px;">
-                  <h1 style="font-size: 4rem; color: #e74c3c;">404</h1>
-                  <h2>Trang không tìm thấy</h2>
-                  <p>Trang bạn đang tìm kiếm không tồn tại.</p>
-                  <button class="btn btn-primary" onclick="window.router.navigate('#dashboard')">Về Dashboard</button>
-                </div>
-              `;
-            }
-          },
-          title: '404 - Not Found',
-          auth: false
-        });
-      }
-      
-      setupNavbar() {
-        const navbar = document.getElementById('navbar');
-        const navToggle = document.getElementById('navToggle');
-        
-        // Mobile nav toggle
-        if (navToggle) {
-          navToggle.addEventListener('click', () => {
-            navbar.classList.toggle('mobile-open');
-          });
-        }
-      }
-      
-      setupAuthListener() {
-        // Simplified - no auth listeners needed for debug mode
-      }
-      
-      updateUserInfo(user) {
-        const userName = document.getElementById('userName');
-        const userRole = document.getElementById('userRole');
-        const userAvatar = document.getElementById('userAvatar');
-        
-        if (userName) userName.textContent = user.name;
-        if (userRole) userRole.textContent = user.role;
-        if (userAvatar) userAvatar.src = user.avatar;
-      }
-    }
-    
-    // Initialize app when DOM is ready
-    document.addEventListener('DOMContentLoaded', () => {
-      window.app = new App();
-    });
-  </script>
+  <!-- App Initialization (cuối cùng) -->
+  <script src="js/app.js"></script>
 </body>
 </html>

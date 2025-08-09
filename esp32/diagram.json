@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "editor": "wokwi",
+  "parts": [
+    { "type": "wokwi-breadboard", "id": "bb1", "top": 190.2, "left": 543, "attrs": {} },
+    { "type": "wokwi-esp32-devkit-v1", "id": "esp1", "top": 137.3, "left": 10, "attrs": {} },
+    {
+      "type": "wokwi-dht22",
+      "id": "dht1",
+      "top": 344.1,
+      "left": 278.4,
+      "attrs": { "temperature": "55.4", "humidity": "74" }
+    },
+    { "type": "wokwi-photoresistor-sensor", "id": "ldr1", "top": 59, "left": 303.8, "attrs": {} },
+    { "type": "wokwi-gas-sensor", "id": "mq1", "top": 557.7, "left": 310, "attrs": {} },
+    {
+      "type": "wokwi-buzzer",
+      "id": "bz1",
+      "top": 154.2,
+      "left": 304.8,
+      "attrs": { "volume": "0.1" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "led1",
+      "top": 205.8,
+      "left": 546.8,
+      "attrs": { "color": "red" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "led2",
+      "top": 205.8,
+      "left": 585.2,
+      "attrs": { "color": "green" }
+    },
+    { "type": "wokwi-led", "id": "led3", "top": 205.8, "left": 614, "attrs": { "color": "blue" } }
+  ],
+  "connections": [
+    [ "dht1:VCC", "bb1:bp.25", "red", [ "h0" ] ],
+    [ "dht1:SDA", "esp1:D4", "green", [ "h0" ] ],
+    [ "dht1:GND", "bb1:bn.26", "black", [ "h556.8", "v-72.5" ] ],
+    [ "ldr1:VCC", "bb1:bp.20", "red", [ "h0" ] ],
+    [ "ldr1:GND", "bb1:bn.20", "black", [ "h0" ] ],
+    [ "ldr1:AO", "esp1:D34", "orange", [ "h0" ] ],
+    [ "mq1:VCC", "bb1:bp.16", "red", [ "h0" ] ],
+    [ "mq1:GND", "bb1:bn.15", "black", [ "h0" ] ],
+    [ "mq1:AOUT", "esp1:D35", "brown", [ "h0" ] ],
+    [ "esp1:3V3", "bb1:bp.10", "red", [ "h0" ] ],
+    [ "esp1:GND.1", "bb1:bn.5", "black", [ "h0" ] ],
+    [ "bz1:1", "esp1:D5", "red", [ "h0" ] ],
+    [ "bz1:2", "esp1:GND.1", "black", [ "h-202", "v28.8", "h-28.5" ] ]
+  ],
+  "dependencies": {}
+}
